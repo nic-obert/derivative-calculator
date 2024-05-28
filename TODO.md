@@ -6,11 +6,11 @@ Project Description
 
 ### Todo
 
-- [ ] create ast parser  
 - [ ] implement destructors  
 
 ### In Progress
 
+- [ ] create ast parser  
 
 ### Done ✓
 

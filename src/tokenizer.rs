@@ -4,7 +4,7 @@ use std::rc::Rc;
 use regex::Regex;
 use lazy_static::lazy_static;
 
-use crate::{ast::{ASTBuilder, Priority, AST}, errors};
+use crate::{ast::{ASTBuilder, Priority, FunctionTree}, errors};
 
 
 lazy_static! {
@@ -100,7 +100,7 @@ fn lex<'a>(source: &'a str) -> impl Iterator<Item = SourceToken<'a>> {
 }
 
 
-pub fn tokenize<'a>(source: &'a str) -> AST<'a> {
+pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
 
     let raw_tokens = lex(source);
 

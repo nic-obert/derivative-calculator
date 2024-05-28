@@ -22,3 +22,11 @@ pub fn invalid_token(token: &SourceToken, source: &str, message: &str) -> ! {
     std::process::exit(1);
 }
 
+
+pub fn invalid_input(message: &str) -> ! {
+
+    println!("Invalid input:\n{}\n", message);
+
+    std::process::exit(1);
+}
+
