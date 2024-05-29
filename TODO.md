@@ -6,13 +6,16 @@ Project Description
 
 ### Todo
 
-- [ ] implement destructors  
+- [ ] implement derivation  
+- [ ] implement functions  
+- [ ] implement implicit multiplication  
 
 ### In Progress
 
-- [ ] create ast parser  
 
 ### Done ✓
 
+- [x] implement destructors  
+- [x] create ast parser  
 - [x] Create tokenizer  
 

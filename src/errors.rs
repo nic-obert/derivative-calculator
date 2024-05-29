@@ -30,3 +30,15 @@ pub fn invalid_input(message: &str) -> ! {
     std::process::exit(1);
 }
 
+
+pub fn parsing_error(token: &SourceToken, source: &str, message: &str) -> ! {
+
+    println!("Parsing error on token `{}` at column {}:\n", token.string, token.column);
+
+    print_source_context(source, token.column);
+
+    println!("\n{}\n", message);
+
+    std::process::exit(1);
+}
+

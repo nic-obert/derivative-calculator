@@ -4,7 +4,8 @@ use std::rc::Rc;
 use regex::Regex;
 use lazy_static::lazy_static;
 
-use crate::{ast::{ASTBuilder, Priority, FunctionTree}, errors};
+use crate::errors;
+use crate::ast::{UnparsedTree, Priority, FunctionTree};
 
 
 lazy_static! {
@@ -100,18 +101,18 @@ fn lex<'a>(source: &'a str) -> impl Iterator<Item = SourceToken<'a>> {
 }
 
 
-pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
+pub fn tokenize<'a>(source: &'a str) -> UnparsedTree<'a> {
 
     let raw_tokens = lex(source);
 
-    let mut ast_builder = ASTBuilder::new();
+    let mut tokens = UnparsedTree::new(source);
 
     let mut positional_priority: Priority = 0;
 
     for token in raw_tokens {
         match token.string {
 
-            "+" => ast_builder.push_token(
+            "+" => tokens.push_token(
                 Token {
                     value: TokenValue::Plus,
                     source: Rc::new(token)
@@ -119,7 +120,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
                 positional_priority
             ),
             
-            "-" => ast_builder.push_token(
+            "-" => tokens.push_token(
                 Token {
                     value: TokenValue::Minus,
                     source: Rc::new(token)
@@ -127,7 +128,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
                 positional_priority
             ),
 
-            "*" => ast_builder.push_token(
+            "*" => tokens.push_token(
                 Token {
                     value: TokenValue::Mul,
                     source: Rc::new(token)
@@ -135,7 +136,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
                 positional_priority
             ),
 
-            "/" => ast_builder.push_token(
+            "/" => tokens.push_token(
                 Token {
                     value: TokenValue::Div,
                     source: Rc::new(token)
@@ -143,7 +144,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
                 positional_priority
             ),
 
-            "^" => ast_builder.push_token(
+            "^" => tokens.push_token(
                 Token {
                     value: TokenValue::Pow,
                     source: Rc::new(token)
@@ -152,7 +153,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
             ),
 
             "(" => {
-                ast_builder.push_token(
+                tokens.push_token(
                     Token {
                         value: TokenValue::ParenOpen,
                         source: Rc::new(token)
@@ -164,7 +165,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
 
             ")" => {
                 positional_priority -= TokenValue::max_priority();
-                ast_builder.push_token(
+                tokens.push_token(
                     Token {
                         value: TokenValue::ParenClose,
                         source: Rc::new(token)
@@ -176,7 +177,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
             string => {
 
                 if let Ok(n) = string.parse::<f64>() {
-                    ast_builder.push_token(
+                    tokens.push_token(
                         Token {
                             value: TokenValue::Number(n),
                             source: Rc::new(token)
@@ -184,7 +185,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
                         positional_priority
                     );
                 } else if TOKEN_REGEX.is_match(string) {
-                    ast_builder.push_token(
+                    tokens.push_token(
                         Token {
                             value: TokenValue::Identifier(string),
                             source: Rc::new(token),
@@ -198,7 +199,7 @@ pub fn tokenize<'a>(source: &'a str) -> FunctionTree<'a> {
         }
     }
 
-    ast_builder.build()
+    tokens
 }
 
 
