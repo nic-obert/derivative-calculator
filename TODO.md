@@ -7,7 +7,6 @@ Project Description
 ### Todo
 
 - [ ] implement derivation  
-- [ ] implement functions  
 - [ ] implement implicit multiplication  
 
 ### In Progress
@@ -15,6 +14,7 @@ Project Description
 
 ### Done ✓
 
+- [x] implement functions  
 - [x] implement destructors  
 - [x] create ast parser  
 - [x] Create tokenizer  

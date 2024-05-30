@@ -3,6 +3,7 @@ mod tokenizer;
 mod ast;
 mod errors;
 mod tests;
+mod functions;
 
 use clap::Parser;
 

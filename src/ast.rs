@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Display;
 use std::mem;
 use std::ptr;
 use std::rc::Rc;
@@ -6,6 +7,7 @@ use std::rc::Rc;
 use crate::errors;
 use crate::tokenizer::SourceToken;
 use crate::tokenizer::{Token, TokenValue};
+use crate::functions::Functions;
 
 
 pub type Priority = u16;
@@ -64,7 +66,7 @@ pub enum OpValue<'a> {
     Div { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
     Pow { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
     Variable (&'a str),
-    Function {}
+    Function { func: Functions, args: Box<[OpNode<'a>]> },
 
 }
 
@@ -108,7 +110,12 @@ impl OpValue<'_> {
                 right.value.fmt_indented(indent, f)?;
             },
             OpValue::Variable(name) => write!(f, "{}", name)?,
-            OpValue::Function {  } => todo!(),
+            OpValue::Function { func, args } => {
+                writeln!(f, "{}()", func)?;
+                for arg in args.iter() {
+                    arg.value.fmt_indented(indent, f)?;
+                }
+            },
         }
 
         Ok(())
@@ -337,6 +344,19 @@ impl<'a> UnparsedTree<'a> {
                         source: token.source.clone(),
                         value: OpValue::Number(n)
                     }),
+
+                TokenValue::Function(func) => {
+
+                    let arg = extract_right!(parsed);
+                    
+                    ParsingNodeValue::Parsed(OpNode {
+                        source: token.source.clone(),
+                        value: OpValue::Function { 
+                            func,
+                            args: vec![*arg].into_boxed_slice()
+                        }
+                    })
+                },
                     
                 TokenValue::ParenClose 
                     => unreachable!(),

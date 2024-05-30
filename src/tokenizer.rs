@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 
 use crate::errors;
 use crate::ast::{UnparsedTree, Priority, FunctionTree};
+use crate::functions::Functions;
 
 
 lazy_static! {
@@ -37,6 +38,7 @@ pub enum TokenValue<'a> {
     ParenClose,
     Identifier (&'a str),
     Number(f64),
+    Function(Functions)
 }
 
 impl fmt::Display for TokenValue<'_> {
@@ -51,6 +53,7 @@ impl fmt::Display for TokenValue<'_> {
             TokenValue::ParenClose => write!(f, ")"),
             TokenValue::Identifier(name) => write!(f, "{}", name),
             TokenValue::Number(n) => write!(f, "{}", n),
+            TokenValue::Function(func) => write!(f, "{}", func)
         }
     }
 }
@@ -65,8 +68,9 @@ impl TokenValue<'_> {
             TokenValue::Mul => 2,
             TokenValue::Div => 2,
             TokenValue::Pow => 3,
-            TokenValue::Identifier(_) => 4, // Identifiers could be function names, so they must be evaluated before other operations
+            TokenValue::Identifier(_) => 4,
             TokenValue::Number(_) => 4, // Numbers are evaluated right away because they don't require operands
+            TokenValue::Function(_) => 4,
             TokenValue::ParenOpen => 5,
         }
     }
@@ -183,6 +187,13 @@ pub fn tokenize<'a>(source: &'a str) -> UnparsedTree<'a> {
                             source: Rc::new(token)
                         },
                         positional_priority
+                    );
+                } else if let Some(function) = Functions::from_name(string) {
+                    tokens.push_token(
+                        Token {
+                            value: TokenValue::Function(function),
+                            source: Rc::new(token)
+                        }, positional_priority
                     );
                 } else if TOKEN_REGEX.is_match(string) {
                     tokens.push_token(
