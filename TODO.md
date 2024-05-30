@@ -6,11 +6,13 @@ Project Description
 
 ### Todo
 
-- [ ] implement derivation  
+- [ ] implement function tree simplification  
+- [ ] implement derivation of known functions  
 - [ ] implement implicit multiplication  
 
 ### In Progress
 
+- [ ] implement derivation  
 
 ### Done ✓
 

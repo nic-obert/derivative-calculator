@@ -8,7 +8,7 @@ mod tests {
     fn test() {
         let foo = "1+1";
         let tokens = tokenizer::tokenize(foo);
-        let ast = tokens.parse();
+        let _ast = tokens.parse();
     }
 
 }

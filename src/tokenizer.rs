@@ -5,7 +5,7 @@ use regex::Regex;
 use lazy_static::lazy_static;
 
 use crate::errors;
-use crate::ast::{UnparsedTree, Priority, FunctionTree};
+use crate::ast::{UnparsedTree, Priority};
 use crate::functions::Functions;
 
 

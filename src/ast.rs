@@ -1,5 +1,4 @@
 use std::fmt;
-use std::fmt::Display;
 use std::mem;
 use std::ptr;
 use std::rc::Rc;
@@ -60,13 +59,16 @@ pub struct ParsingNode<'a> {
 pub enum OpValue<'a> {
     
     Number (f64),
-    Add { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
-    Sub { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
-    Mul { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
-    Div { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
-    Pow { left: Box<OpNode<'a>>, right: Box<OpNode<'a>> },
+    Add { left: Rc<OpNode<'a>>, right: Rc<OpNode<'a>> },
+    Sub { left: Rc<OpNode<'a>>, right: Rc<OpNode<'a>> },
+    Mul { left: Rc<OpNode<'a>>, right: Rc<OpNode<'a>> },
+    Div { left: Rc<OpNode<'a>>, right: Rc<OpNode<'a>> },
+    Pow { left: Rc<OpNode<'a>>, right: Rc<OpNode<'a>> },
     Variable (&'a str),
-    Function { func: Functions, args: Box<[OpNode<'a>]> },
+
+    // Here Box<[]> must be used because Rc does not include the size of the slice
+    /// A one-argument math function
+    Function { func: Functions, arg: Rc<OpNode<'a>> },
 
 }
 
@@ -110,11 +112,9 @@ impl OpValue<'_> {
                 right.value.fmt_indented(indent, f)?;
             },
             OpValue::Variable(name) => write!(f, "{}", name)?,
-            OpValue::Function { func, args } => {
+            OpValue::Function { func, arg } => {
                 writeln!(f, "{}()", func)?;
-                for arg in args.iter() {
-                    arg.value.fmt_indented(indent, f)?;
-                }
+                arg.value.fmt_indented(indent, f)?;
             },
         }
 
@@ -138,7 +138,7 @@ pub struct OpNode<'a> {
 
 pub struct FunctionTree<'a> {
 
-    root: OpNode<'a>,
+    pub root: Rc<OpNode<'a>>,
 
 }
 
@@ -196,7 +196,7 @@ impl<'a> UnparsedTree<'a> {
 
 
     /// Extracts the node from the linked list, assuming it is in the list
-    fn extract_node(&mut self, node_ptr: *mut ParsingNode<'a>) -> Box<ParsingNodeValue<'a>> {
+    fn extract_node(&mut self, node_ptr: *mut ParsingNode<'a>) -> ParsingNodeValue<'a> {
         unsafe {
             let node = &mut *node_ptr;
 
@@ -214,7 +214,7 @@ impl<'a> UnparsedTree<'a> {
                 self.last_ptr = node.prev;
             }
 
-            let value = Box::new(mem::take(&mut node.value));
+            let value = mem::take(&mut node.value);
 
             ptr::drop_in_place(node);
 
@@ -244,9 +244,9 @@ impl<'a> UnparsedTree<'a> {
                         errors::parsing_error(&token.source, self.source, "Expected an operand to the right, but none was found");
                     }
 
-                    match *self.extract_node(node.next) {
+                    match self.extract_node(node.next) {
 
-                        ParsingNodeValue::Parsed(opnode) => Box::new(opnode),
+                        ParsingNodeValue::Parsed(opnode) => opnode,
 
                         ParsingNodeValue::Unparsed { token, priority: _ }
                             => errors::parsing_error(&token.source, &self.source, "Invalid syntax, this token was not expected."),
@@ -260,7 +260,7 @@ impl<'a> UnparsedTree<'a> {
                         errors::parsing_error(&token.source, self.source, "Expected an operand to the right, but none was found");
                     }
 
-                    match *self.extract_node(node.next) {
+                    match self.extract_node(node.next) {
 
                         ParsingNodeValue::Parsed(opnode)
                             => errors::parsing_error(&opnode.source, &self.source, "Invalid syntax, this token was not expected."),
@@ -280,9 +280,9 @@ impl<'a> UnparsedTree<'a> {
                         errors::parsing_error(&token.source, self.source, "Expected an operand to the left, but none was found");
                     }
 
-                    match *self.extract_node(node.prev) {
+                    match self.extract_node(node.prev) {
 
-                        ParsingNodeValue::Parsed(opnode) => Box::new(opnode),
+                        ParsingNodeValue::Parsed(opnode) => opnode,
 
                         ParsingNodeValue::Unparsed { token, priority: _ }
                             => errors::parsing_error(&token.source, &self.source, "Invalid syntax, this token was not expected."),
@@ -295,11 +295,11 @@ impl<'a> UnparsedTree<'a> {
             macro_rules! parse_binary {
                 ($op: ident) => {{
 
-                    let left = extract_left!(parsed);
-                    let right = extract_right!(parsed);                    
+                    let left = Rc::new(extract_left!(parsed));
+                    let right = Rc::new(extract_right!(parsed));                    
 
                     ParsingNodeValue::Parsed(OpNode {
-                        source: token.source.clone(),
+                        source: Rc::clone(&token.source),
                         value: OpValue::$op { left, right },
                     })              
                 }};
@@ -324,8 +324,8 @@ impl<'a> UnparsedTree<'a> {
                     }
                     
                     ParsingNodeValue::Parsed(OpNode {
-                        source: token.source.clone(),
-                        value: content.value, // Drop the parentheses
+                        source: Rc::clone(&token.source),
+                        value: content.value, // Drop the parentheses, the tree will keep track of the operator hierarchy
                     })
                 },
 
@@ -334,14 +334,14 @@ impl<'a> UnparsedTree<'a> {
                     // TODO: Can either be a function or a variable
 
                     ParsingNodeValue::Parsed(OpNode {
-                        source: token.source.clone(),
+                        source: Rc::clone(&token.source),
                         value: OpValue::Variable(name)
                     })
                 },
                 
                 TokenValue::Number(n)
                     => ParsingNodeValue::Parsed (OpNode {
-                        source: token.source.clone(),
+                        source: Rc::clone(&token.source),
                         value: OpValue::Number(n)
                     }),
 
@@ -350,10 +350,10 @@ impl<'a> UnparsedTree<'a> {
                     let arg = extract_right!(parsed);
                     
                     ParsingNodeValue::Parsed(OpNode {
-                        source: token.source.clone(),
+                        source: Rc::clone(&token.source),
                         value: OpValue::Function { 
                             func,
-                            args: vec![*arg].into_boxed_slice()
+                            arg: Rc::new(arg)
                         }
                     })
                 },
@@ -375,7 +375,7 @@ impl<'a> UnparsedTree<'a> {
         }
 
         let root = if let ParsingNodeValue::Parsed(opnode) = root.value {
-            opnode
+            Rc::new(opnode)
         } else {
             unreachable!()
         };
@@ -385,6 +385,24 @@ impl<'a> UnparsedTree<'a> {
         }
     }
 
+}
+
+impl Drop for UnparsedTree<'_> {
+    fn drop(&mut self) {
+        // This function should normally do nothing since the tree should have been consumed in its entirety when building.
+        // Here Drop is implemented both for the sake of completeness and in case the programmer didn't build the tree.
+        
+        let mut node_ptr = self.first_ptr;
+
+        while let Some(node) = unsafe { node_ptr.as_ref() } {
+
+            node_ptr = node.next;
+
+            unsafe { 
+                ptr::drop_in_place(node as *const ParsingNode as *mut ParsingNodeValue);
+            }
+        }
+    }
 }
 
 

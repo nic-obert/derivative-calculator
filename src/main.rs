@@ -4,6 +4,7 @@ mod ast;
 mod errors;
 mod tests;
 mod functions;
+mod derivatives;
 
 use clap::Parser;
 
@@ -19,10 +20,16 @@ fn main() {
     }
 
     let tokens = tokenizer::tokenize(&args.input_function);
+
     // println!("{}", tokens);
 
     let ast = tokens.parse();
-    println!("{}", ast);
+
+    println!("Original function tree:\n{}", ast);
+
+    let dast = derivatives::derive(&ast, &args.derivation_variable);
+
+    println!("Derived function tree:\n{}", dast);
 
 }
 
