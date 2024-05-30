@@ -12,6 +12,7 @@ Project Description
 
 ### In Progress
 
+- [ ] add a readme  
 - [ ] implement derivation  
 
 ### Done ✓

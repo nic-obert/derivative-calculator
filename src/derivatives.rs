@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
-use crate::{ast::{FunctionTree, OpNode, OpValue}, functions::Functions};
+use crate::functions::Functions;
+use crate::ast::{FunctionTree, OpNode, OpValue};
 
 
 fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
