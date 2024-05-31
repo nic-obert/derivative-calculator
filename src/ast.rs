@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::write;
 use std::mem;
 use std::ptr;
 use std::rc::Rc;
@@ -76,8 +77,13 @@ impl OpValue<'_> {
 
     pub fn fmt_indented(&self, mut indent: usize, f: &mut fmt::Formatter) -> fmt::Result {
 
-        write!(f, "{:>indent$}| ", "")?;
-        indent += 2;
+        for _ in 0..indent {
+            write!(f, "| ")?;
+        }
+        if indent != 0 {
+            write!(f, "|_ ")?;
+        }
+        indent += 1;
 
         match self {
             OpValue::Number(n) => write!(f, "{}", n)?,

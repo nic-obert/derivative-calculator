@@ -7,12 +7,12 @@ Project Description
 ### Todo
 
 - [ ] implement nth roots  
-- [ ] implement linear representation of a function tree  
 - [ ] implement function tree simplification  
 - [ ] implement implicit multiplication  
 
 ### In Progress
 
+- [ ] implement linear representation of a function tree  
 - [ ] implement derivation of known functions  
 
 ### Done ✓
