@@ -39,11 +39,12 @@ declare_functions! {
     Sin sin,
     Cos cos,
     Tan tan,
-    Tanh tanh,
     Arcsin asin,
     Arccos acos,
     Arctan atan,
-    SquareRoot sqrt
+    SquareRoot sqrt,
+    NaturalLog ln,
+    Secant sec
 
 }
 

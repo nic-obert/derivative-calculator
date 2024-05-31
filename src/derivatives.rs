@@ -114,29 +114,89 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
             }
         ),
         
-        OpValue::Pow { left, right }
+        OpValue::Pow { left, right } => {
+        // f(x) = a(x) ^ b
+        // f'(x) = b * a(x) ^ (b - 1) * a'(x)
+        // or
         // f(x) = a(x) ^ b(x)
-        // f'(x) = ( b(x) * a(x) ^ ( b(x) - 1 ) ) * a'(x)
-         => op_node!(node,
-            OpValue::Mul {
-                left: op_node!(node, // (b(x) * a(x)) ^ (b(x) - 1)
-                    OpValue::Pow {
-                        left: op_node!(node, // b(x) * a(x)
-                            OpValue::Mul {
-                                left: Rc::clone(right), // b(x)
-                                right: Rc::clone(left) // a(x)
+        // f'(x) = e ^ ( b(x) * ln(a(x)) ) * ( b'(x) * ln(a(x)) + b(x) * a'(x)/a(x) )
+
+            let bx = derive_node(&right, dvar);
+
+            // If the derivative of a function is zero, it's not a function of the derivation variable
+            if matches!(bx.value, OpValue::Number(0.0)) {
+                // The exponent is constant, so treat this operation as a regular power
+                op_node!(node,
+                    OpValue::Mul {
+                        left: op_node!(node, // (b * a(x)) ^ (b - 1)
+                            OpValue::Pow {
+                                left: op_node!(node, // b(x) * a(x)
+                                    OpValue::Mul {
+                                        left: Rc::clone(right), // b
+                                        right: Rc::clone(left) // a(x)
+                                    }
+                                ),
+                                right: op_node!(node, // b - 1
+                                    OpValue::Sub {
+                                        left: Rc::clone(right), // b
+                                        right: op_node!(node, OpValue::Number(1.0)) // 1
+                                    }
+                                )
+                        }), 
+                        right: derive_node(left, dvar) // a'(x)
+                    }
+                )
+            } else {
+                // The exponent is a function of the derivation variable, treat this opearation as an exponentiation
+                op_node!(node,
+                    OpValue::Mul {
+                        left: op_node!(node, // e ^ (b(x) * ln(a(x)))
+                            OpValue::Pow {
+                                left: op_node!(node, OpValue::Variable("e")), // e
+                                right: op_node!(node, // b(x) * ln(a(x))
+                                    OpValue::Mul {
+                                        left: Rc::clone(right), // b(x)
+                                        right: op_node!(node, // ln( a(x) )
+                                            OpValue::Function {
+                                                func: Functions::NaturalLog,
+                                                arg: Rc::clone(left)
+                                            }
+                                        ),
+                                    }
+                                ),
                             }
                         ),
-                        right: op_node!(node, // b(x) - 1
-                            OpValue::Sub {
-                                left: Rc::clone(right), // b(x)
-                                right: op_node!(node, OpValue::Number(1.0)) // 1
+                        right: op_node!(node, // (b'(x) * ln(a(x))) + (b(x) * a'(x)/a(x))
+                            OpValue::Add {
+                                left: op_node!(node, // b'(x) * ln(a(x))
+                                    OpValue::Mul {
+                                        left: derive_node(right, dvar), // b'(x)
+                                        right: op_node!(node, // ln( a(x) )
+                                            OpValue::Function {
+                                                func: Functions::NaturalLog,
+                                                arg: Rc::clone(left)
+                                            }
+                                        )
+                                    }
+                                ),
+                                right: op_node!(node, // b(x) * a'(x)/a(x)
+                                    OpValue::Mul {
+                                        left: Rc::clone(right), // b(x)
+                                        right: op_node!(node, // a'(x) / a(x)
+                                            OpValue::Div {
+                                                left: derive_node(left, dvar), // a'(x)
+                                                right: Rc::clone(left)
+                                            }
+                                        )
+                                    }
+                                ),
                             }
-                        )
-                }), 
-                right: derive_node(left, dvar) // a'(x)
+                        ),
+                    }
+                )
             }
-        ),
+
+        },
 
     }
 
@@ -176,12 +236,107 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
             }
         ),
 
-        Functions::Tan => todo!(),
-        Functions::Tanh => todo!(),
-        Functions::Arcsin => todo!(),
-        Functions::Arccos => todo!(),
-        Functions::Arctan => todo!(),
+        Functions::Tan
+        // f(x) = tan(a(x))
+        // f'(x) = sec(a(x))^2 * a'(x)
+         => op_node!(arg,
+            OpValue::Mul {
+                left: op_node!(arg, // sec(a(x)) ^ 2
+                    OpValue::Pow {
+                        left: op_node!(arg, // sec( a(x) )
+                            OpValue::Function {
+                                func: Functions::Secant,
+                                arg: Rc::clone(&arg)
+                            }
+                        ),
+                        right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                    }
+                ),
+                right: derive_node(&arg, dvar) // a'(x)
+
+            }
+        ),
+
+        Functions::Arcsin
+        // f(x) = asin(a(x))
+        // f'(x) = a'(x) / sqrt(1 - a(x)^2)
+         => op_node!(arg,
+            OpValue::Div {
+                left: derive_node(&arg, dvar), // a'(x)
+                right: op_node!(arg, // sqrt(1 - a(x)^2)
+                    OpValue::Function {
+                        func: Functions::SquareRoot,
+                        arg: op_node!(arg, // 1 - a(x)^2
+                            OpValue::Sub {
+                                left: op_node!(arg, OpValue::Number(1.0)), // 1
+                                right: op_node!(arg, // a(x)^2
+                                    OpValue::Pow {
+                                        left: Rc::clone(&arg), // a(x)
+                                        right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                                    }
+                                )
+                            }
+                        )
+                    }
+                )
+            }
+        ),
+
+        Functions::Arccos
+        // f(x) = asin(a(x))
+        // f'(x) = - a'(x) / sqrt(1 - a(x)^2)
+         => op_node!(arg,
+            OpValue::Mul {
+                left: op_node!(arg, OpValue::Number(-1.0)), // -1
+                right: op_node!(arg, // a'(x) / sqrt(1 - a(x)^2)
+                    OpValue::Div {
+                        left: derive_node(&arg, dvar), // a'(x)
+                        right: op_node!(arg, // sqrt(1 - a(x)^2)
+                            OpValue::Function {
+                                func: Functions::SquareRoot,
+                                arg: op_node!(arg, // 1 - a(x)^2
+                                    OpValue::Sub {
+                                        left: op_node!(arg, OpValue::Number(1.0)), // 1
+                                        right: op_node!(arg, // a(x)^2
+                                            OpValue::Pow {
+                                                left: Rc::clone(&arg), // a(x)
+                                                right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        )
+                    }
+                ),
+            }
+        ),
+
+        Functions::Arctan
+        // f(x) = tan(a(x))
+        // f'(x) = a'(x) / (1 + a(x)^2)
+         => op_node!(arg,
+            OpValue::Div {
+                left: derive_node(&arg, dvar), // a'(x)
+                right: op_node!(arg, // 1 + a(x)^2
+                    OpValue::Add {
+                        left: op_node!(arg, OpValue::Number(1.0)), // 1
+                        right: op_node!(arg, // a(x) ^ 2
+                            OpValue::Pow {
+                                left: Rc::clone(&arg), // a(x)
+                                right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                            }
+                        )
+                    }
+                )
+            }
+        ),
+
         Functions::SquareRoot => todo!(),
+        Functions::NaturalLog => todo!(),
+        Functions::Secant => todo!(),
+        
+        
     }
 }
 

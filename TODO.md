@@ -6,6 +6,7 @@ Project Description
 
 ### Todo
 
+- [ ] implement nth roots  
 - [ ] implement linear representation of a function tree  
 - [ ] implement function tree simplification  
 - [ ] implement implicit multiplication  
@@ -13,10 +14,10 @@ Project Description
 ### In Progress
 
 - [ ] implement derivation of known functions  
-- [ ] implement derivation  
 
 ### Done ✓
 
+- [x] implement derivation  
 - [x] add a readme  
 - [x] implement functions  
 - [x] implement destructors  
