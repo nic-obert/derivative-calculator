@@ -4,18 +4,19 @@ use crate::functions::Functions;
 use crate::ast::{FunctionTree, OpNode, OpValue};
 
 
-fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
+macro_rules! op_node {
+    ($source_node:ident, $value:expr) => {
+        Rc::new(
+            OpNode {
+                source: Rc::clone(&$source_node.source),
+                value: $value
+            }
+        )
+    };
+}
 
-    macro_rules! op_node {
-        ($source_node:ident, $value:expr) => {
-            Rc::new(
-                OpNode {
-                    source: Rc::clone(&$source_node.source),
-                    value: $value
-                }
-            )
-        };
-    }
+
+fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
 
     match &node.value {
 
@@ -108,7 +109,7 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
         // f'(x) = a'(b(x)) * b'(x)
         => op_node!(node,
             OpValue::Mul {
-                left: derive_function(*func, arg), // a'(b(x))
+                left: derive_function(*func, Rc::clone(arg), dvar), // a'(b(x))
                 right: derive_node(arg, dvar) // b'(x)
             }
         ),
@@ -142,10 +143,39 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
 }
 
 
-fn derive_function<'a>(func: Functions, arg: &OpNode<'a>) -> Rc<OpNode<'a>> {
+fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> Rc<OpNode<'a>> {
     match func {
-        Functions::Sin => todo!(),
-        Functions::Cos => todo!(),
+
+        Functions::Sin
+        // f(x) = sin(a(x))
+        // f'(x) = cos(a(x)) * a'(x)
+         => op_node!(arg, 
+            OpValue::Mul {
+                left: op_node!(arg, 
+                    OpValue::Function { func: Functions::Cos, arg: Rc::clone(&arg) } // cos(a(x))
+                ),
+                right: derive_node(&arg, dvar) // a'(x)
+            }
+        ),
+
+        Functions::Cos
+        // f(x) = cos(a(x))
+        // f'(x) = -sin(a(x)) * a'(x)
+         => op_node!(arg,
+            OpValue::Mul {
+                left: op_node!(arg, // -sin(a(x))
+                    OpValue::Mul {
+                        left: op_node!(arg, OpValue::Number(-1.0)), // -1
+                        right: op_node!(arg,
+                            OpValue::Function {
+                                func: Functions::Sin,
+                                arg: Rc::clone(&arg)
+                            })
+                    }),
+                right: derive_node(&arg, dvar) // a'(x)
+            }
+        ),
+
         Functions::Tan => todo!(),
         Functions::Tanh => todo!(),
         Functions::Arcsin => todo!(),

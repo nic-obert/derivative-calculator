@@ -8,11 +8,11 @@ Project Description
 
 - [ ] implement linear representation of a function tree  
 - [ ] implement function tree simplification  
-- [ ] implement derivation of known functions  
 - [ ] implement implicit multiplication  
 
 ### In Progress
 
+- [ ] implement derivation of known functions  
 - [ ] implement derivation  
 
 ### Done ✓
