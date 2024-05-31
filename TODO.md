@@ -6,17 +6,18 @@ Project Description
 
 ### Todo
 
+- [ ] implement linear representation of a function tree  
 - [ ] implement function tree simplification  
 - [ ] implement derivation of known functions  
 - [ ] implement implicit multiplication  
 
 ### In Progress
 
-- [ ] add a readme  
 - [ ] implement derivation  
 
 ### Done ✓
 
+- [x] add a readme  
 - [x] implement functions  
 - [x] implement destructors  
 - [x] create ast parser  
