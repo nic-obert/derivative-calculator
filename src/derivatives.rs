@@ -15,17 +15,21 @@ macro_rules! op_node {
     };
 }
 
+macro_rules! number {
+    ($source_node:ident, $num:literal) => {
+        op_node!($source_node, OpValue::Number($num as f64))
+    }
+}
+
 
 fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
 
     match &node.value {
 
         OpValue::Number(_)
-        // f(x) = 2
+        // f(x) = n
         // f'(x) = 0
-         => op_node!(node,
-                OpValue::Number(0.0)
-            ),
+         => number!(node, 0),
 
         OpValue::Add { left, right }
         // f(x) = a(x) + b(x)
@@ -86,7 +90,7 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
                     right: op_node!(node, // g(x)^2
                         OpValue::Pow {
                             left: Rc::clone(right), // b(x)
-                            right: op_node!(node, OpValue::Number(2.0)) // 2
+                            right: number!(node, 2) // 2
                         })                    
             }),
 
@@ -94,13 +98,13 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
         // f(x) = x
         // f'(x) = 1
         // or
-        // f(x) = k
+        // f(x) = any
         // f'(x) = 0
 
             if *name == dvar {
-                op_node!(node, OpValue::Number(1.0))
+                number!(node, 1)
             } else {
-                op_node!(node, OpValue::Number(0.0))
+                number!(node, 0)
             }
         },
         
@@ -139,7 +143,7 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
                                 right: op_node!(node, // b - 1
                                     OpValue::Sub {
                                         left: Rc::clone(right), // b
-                                        right: op_node!(node, OpValue::Number(1.0)) // 1
+                                        right: number!(node, 1) // 1
                                     }
                                 )
                         }), 
@@ -211,8 +215,11 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
         // f'(x) = cos(a(x)) * a'(x)
          => op_node!(arg, 
             OpValue::Mul {
-                left: op_node!(arg, 
-                    OpValue::Function { func: Functions::Cos, arg: Rc::clone(&arg) } // cos(a(x))
+                left: op_node!(arg, // cos(a(x))
+                    OpValue::Function { 
+                        func: Functions::Cos, 
+                        arg: Rc::clone(&arg)
+                    }
                 ),
                 right: derive_node(&arg, dvar) // a'(x)
             }
@@ -225,7 +232,7 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
             OpValue::Mul {
                 left: op_node!(arg, // -sin(a(x))
                     OpValue::Mul {
-                        left: op_node!(arg, OpValue::Number(-1.0)), // -1
+                        left: number!(arg, -1), // -1
                         right: op_node!(arg,
                             OpValue::Function {
                                 func: Functions::Sin,
@@ -249,7 +256,7 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
                                 arg: Rc::clone(&arg)
                             }
                         ),
-                        right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                        right: number!(arg, 2) // ^2
                     }
                 ),
                 right: derive_node(&arg, dvar) // a'(x)
@@ -268,11 +275,11 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
                         func: Functions::SquareRoot,
                         arg: op_node!(arg, // 1 - a(x)^2
                             OpValue::Sub {
-                                left: op_node!(arg, OpValue::Number(1.0)), // 1
+                                left: number!(arg, 1), // 1
                                 right: op_node!(arg, // a(x)^2
                                     OpValue::Pow {
                                         left: Rc::clone(&arg), // a(x)
-                                        right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                                        right: number!(arg, 2) // ^2
                                     }
                                 )
                             }
@@ -287,7 +294,7 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
         // f'(x) = - a'(x) / sqrt(1 - a(x)^2)
          => op_node!(arg,
             OpValue::Mul {
-                left: op_node!(arg, OpValue::Number(-1.0)), // -1
+                left: number!(arg, -1), // -1
                 right: op_node!(arg, // a'(x) / sqrt(1 - a(x)^2)
                     OpValue::Div {
                         left: derive_node(&arg, dvar), // a'(x)
@@ -296,11 +303,11 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
                                 func: Functions::SquareRoot,
                                 arg: op_node!(arg, // 1 - a(x)^2
                                     OpValue::Sub {
-                                        left: op_node!(arg, OpValue::Number(1.0)), // 1
+                                        left: number!(arg, 1), // 1
                                         right: op_node!(arg, // a(x)^2
                                             OpValue::Pow {
                                                 left: Rc::clone(&arg), // a(x)
-                                                right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                                                right: number!(arg, 2) // ^2
                                             }
                                         )
                                     }
@@ -320,11 +327,11 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
                 left: derive_node(&arg, dvar), // a'(x)
                 right: op_node!(arg, // 1 + a(x)^2
                     OpValue::Add {
-                        left: op_node!(arg, OpValue::Number(1.0)), // 1
+                        left: number!(arg, 1), // 1
                         right: op_node!(arg, // a(x) ^ 2
                             OpValue::Pow {
                                 left: Rc::clone(&arg), // a(x)
-                                right: op_node!(arg, OpValue::Number(2.0)) // ^2
+                                right: number!(arg, 2) // ^2
                             }
                         )
                     }
