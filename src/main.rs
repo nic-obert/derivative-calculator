@@ -25,11 +25,13 @@ fn main() {
 
     let ast = tokens.parse();
 
-    println!("Original function tree:\n{}", ast);
+    println!("Original function tree:\n{:?}", ast);
 
     let dast = derivatives::derive(&ast, &args.derivation_variable);
 
-    println!("Derived function tree:\n{}", dast);
+    println!("Derived function tree:\n{:?}", dast);
+
+    println!("\n\nLinear derivative function:\n{}", dast);
 
 }
 

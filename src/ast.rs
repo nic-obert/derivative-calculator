@@ -1,5 +1,4 @@
 use std::fmt;
-use std::fmt::write;
 use std::mem;
 use std::ptr;
 use std::rc::Rc;
@@ -39,7 +38,7 @@ impl<'a> ParsingNodeValue<'a> {
 impl fmt::Display for ParsingNodeValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ParsingNodeValue::Parsed (node) => write!(f, "{}", node.value),
+            ParsingNodeValue::Parsed (node) => write!(f, "{:?}", node.value),
             ParsingNodeValue::Unparsed { token, priority } => write!(f, "{} (Priority: {})", token.value, priority),
             _ => unreachable!()
         }
@@ -71,6 +70,21 @@ pub enum OpValue<'a> {
     /// A one-argument math function
     Function { func: Functions, arg: Rc<OpNode<'a>> },
 
+}
+
+impl fmt::Display for OpValue<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OpValue::Number(n) => write!(f, "{}", n),
+            OpValue::Add { left, right } => write!(f, "({} + {})", left.value, right.value),
+            OpValue::Sub { left, right } => write!(f, "({} - {})", left.value, right.value),
+            OpValue::Mul { left, right } => write!(f, "({} * {})", left.value, right.value),
+            OpValue::Div { left, right } => write!(f, "({} / {})", left.value, right.value),
+            OpValue::Pow { left, right } => write!(f, "({} ^ {})", left.value, right.value),
+            OpValue::Variable(name) => write!(f, "{}", name),
+            OpValue::Function { func, arg } => write!(f, "{}({})", func, arg.value),
+        }
+    }
 }
 
 impl OpValue<'_> {
@@ -129,7 +143,7 @@ impl OpValue<'_> {
 
 }
 
-impl fmt::Display for OpValue<'_> {
+impl fmt::Debug for OpValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.fmt_indented(0, f)
     }
@@ -146,6 +160,12 @@ pub struct FunctionTree<'a> {
 
     pub root: Rc<OpNode<'a>>,
 
+}
+
+impl fmt::Debug for FunctionTree<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.root.value)
+    }
 }
 
 impl fmt::Display for FunctionTree<'_> {

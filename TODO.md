@@ -12,11 +12,11 @@ Project Description
 
 ### In Progress
 
-- [ ] implement linear representation of a function tree  
 - [ ] implement derivation of known functions  
 
 ### Done ✓
 
+- [x] implement linear representation of a function tree  
 - [x] implement derivation  
 - [x] add a readme  
 - [x] implement functions  

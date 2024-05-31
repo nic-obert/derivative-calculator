@@ -109,14 +109,7 @@ fn derive_node<'a>(node: &OpNode<'a>, dvar: &'a str) -> Rc<OpNode<'a>> {
         },
         
         OpValue::Function { func, arg }
-        // f(x) = a(b(x))
-        // f'(x) = a'(b(x)) * b'(x)
-        => op_node!(node,
-            OpValue::Mul {
-                left: derive_function(*func, Rc::clone(arg), dvar), // a'(b(x))
-                right: derive_node(arg, dvar) // b'(x)
-            }
-        ),
+            => derive_function(*func, Rc::clone(arg), dvar),
         
         OpValue::Pow { left, right } => {
         // f(x) = a(x) ^ b
