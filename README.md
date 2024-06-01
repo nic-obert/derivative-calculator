@@ -7,6 +7,7 @@
   - [Hierarchical parsing](#hierarchical-parsing)
   - [Derivation](#derivation)
   - [Simplification](#simplification)
+- [Limitations and future development](#limitations-and-future-development)
 - [License](#license)
 
 
@@ -91,6 +92,10 @@ For example:
  - the constant expression `1+1` is evaluated to `2`
  - the expression `x * (3 + 4)` is evaluated to `x * 7`
  - the expression `x^2 + 3*x + 5 + 2` is evaluated to `x^2 + 3*x + 7`
+
+# Limitations and future development
+
+This is a hobby project and, as such, is not meant to be production-ready or in continuous development. The [TODO.md](TODO.md) file contains a roadmap of the project, its current development state, and eventual future additions.
 
 # License
 
