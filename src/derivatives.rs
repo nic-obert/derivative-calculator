@@ -332,10 +332,60 @@ fn derive_function<'a>(func: Functions, arg: Rc<OpNode<'a>>, dvar: &'a str) -> R
             }
         ),
 
-        Functions::SquareRoot => todo!(),
-        Functions::NaturalLog => todo!(),
-        Functions::Secant => todo!(),
-        
+        Functions::NaturalLog
+        // f(x) = ln(a(x))
+        // f'(x) = a'(x)/a(x)
+         => op_node!(arg,
+            OpValue::Div {
+                left: derive_node(&arg, dvar), // a'(x)
+                right: arg // a(x)
+            }
+        ),
+
+        Functions::SquareRoot
+        // f(x) = sqrt(a(x))
+        // f'(x) = a'(x) / (2 * sqrt(a(x))
+         => op_node!(arg,
+            OpValue::Div {
+                left: derive_node(&arg, dvar), // a'(x)
+                right: op_node!(arg, // 2 * sqrt(a(x))
+                    OpValue::Mul {
+                        left: number!(arg, 2), // 2
+                        right: op_node!(arg, // sqrt(a(x))
+                            OpValue::Function {
+                                func: Functions::SquareRoot,
+                                arg // a(x)
+                            }
+                        )
+                    }
+                )
+            }
+        ),
+
+        Functions::Secant
+        // f(x) = sec(a(x))
+        // f'(x) = sec(a(x)) * tan(a(x)) * a'(x)
+         => op_node!(arg,
+            OpValue::Mul {
+                left: op_node!(arg, // sec(a(x))
+                    OpValue::Function {
+                        func: Functions::Secant,
+                        arg: Rc::clone(&arg)
+                    }
+                ),
+                right: op_node!(arg, // tan(a(x)) * a'(x)
+                    OpValue::Mul {
+                        left: op_node!(arg, // tan(a(x))
+                            OpValue::Function {
+                                func: Functions::Tan,
+                                arg: Rc::clone(&arg)
+                            }    
+                        ),
+                        right: derive_node(&arg, dvar) // a'(x)
+                    }
+                )
+            }
+        ),
         
     }
 }
