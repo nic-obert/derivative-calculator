@@ -5,6 +5,7 @@ mod errors;
 mod tests;
 mod functions;
 mod derivatives;
+mod parsing_tree;
 
 use clap::Parser;
 
