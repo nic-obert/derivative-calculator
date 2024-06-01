@@ -6,6 +6,7 @@ Project Description
 
 ### Todo
 
+- [ ] allow substraction of unspaced numbers like "3-4". Now only "3 - 4" is allowed because "-4" is interpreted as a numeric token by itself  
 - [ ] eventually, implement simplification of function for specific variables like e, pi, and others  
 - [ ] implement nth roots  
 - [ ] implement implicit multiplication  

@@ -5,6 +5,7 @@ use crate::tokenizer::SourceToken;
 use crate::functions::Functions;
 
 
+#[derive(Clone)]
 pub enum OpValue<'a> {
     
     Number (f64),
@@ -148,17 +149,21 @@ fn simplify_node<'a>(node: &Rc<OpNode<'a>>) -> Rc<OpNode<'a>> {
             let left = simplify_node(left);
             let right = simplify_node(right);
 
-            if let (OpValue::Number(left), OpValue::Number(right)) = (&left.value, &right.value) {
-                Rc::new(OpNode {
-                    source: Rc::clone(&node.source),
-                    value: OpValue::Number(left + right)
-                })
-            } else {
-                Rc::new(OpNode {
-                    source: Rc::clone(&node.source),
-                    value: OpValue::Add { left, right }
-                })
-            }
+            Rc::new(OpNode {
+                source: Rc::clone(&node.source),
+                value: match (&left.value, &right.value) {
+
+                    (OpValue::Number(0_f64), arg) |
+                    (arg, OpValue::Number(0_f64))
+                        => arg.clone(),
+                    
+
+                    (OpValue::Number(left), OpValue::Number(right))
+                        => OpValue::Number(left + right),
+                    
+                    _ => OpValue::Add { left, right }
+                }
+            })
         },
 
         OpValue::Sub { left, right } => {
@@ -191,6 +196,10 @@ fn simplify_node<'a>(node: &Rc<OpNode<'a>>) -> Rc<OpNode<'a>> {
                         (OpValue::Number(0_f64), _) |
                         (_, OpValue::Number(0_f64))
                             => OpValue::Number(0_f64),
+                        
+                        (OpValue::Number(1_f64), arg) |
+                        (arg, OpValue::Number(1_f64))
+                            => arg.clone(),
 
                         (OpValue::Number(left), OpValue::Number(right))
                             => OpValue::Number(left * right),
@@ -205,12 +214,17 @@ fn simplify_node<'a>(node: &Rc<OpNode<'a>>) -> Rc<OpNode<'a>> {
             let left = simplify_node(left);
             let right = simplify_node(right);
 
+            // Assuming the denominator is never zero
+
             Rc::new(OpNode {
                 source: Rc::clone(&node.source),
                 value: match (&left.value, &right.value) {
 
                     (OpValue::Number(0_f64), _)
                         => OpValue::Number(0_f64),
+
+                    (arg, OpValue::Number(1_f64))
+                        => arg.clone(),
 
                     (OpValue::Number(left), OpValue::Number(right))
                         => OpValue::Number(left / right),
