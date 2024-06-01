@@ -231,7 +231,7 @@ impl<'a> UnparsedTree<'a> {
                     
                     ParsingNodeValue::Parsed(OpNode {
                         source: Rc::clone(&token.source),
-                        value: content.value, // Drop the parentheses, the tree will keep track of the operator hierarchy
+                        value: content.value, // Drop the parentheses, the tree structure will keep track of the operator hierarchy
                     })
                 },
 
@@ -246,7 +246,7 @@ impl<'a> UnparsedTree<'a> {
                 },
                 
                 TokenValue::Number(n)
-                    => ParsingNodeValue::Parsed (OpNode {
+                 => ParsingNodeValue::Parsed (OpNode {
                         source: Rc::clone(&token.source),
                         value: OpValue::Number(n)
                     }),

@@ -24,15 +24,21 @@ fn main() {
 
     // println!("{}", tokens);
 
-    let ast = tokens.parse();
+    let function_tree = tokens.parse();
 
-    println!("Original function tree:\n{:?}", ast);
+    println!("Original function tree:\n{:?}", function_tree);
 
-    let dast = derivatives::derive(&ast, &args.derivation_variable);
+    let derivative_tree = derivatives::derive(&function_tree, &args.derivation_variable);
 
-    println!("Derived function tree:\n{:?}", dast);
+    println!("Derived function tree:\n{:?}", derivative_tree);
 
-    println!("\n\nLinear derivative function:\n{}", dast);
+    println!("\n\nLinear derivative function:\n{}", derivative_tree);
+
+    let simplified_derivative = derivative_tree.simplify();
+
+    println!("\nSimplified derivative function tree:\n{:?}", simplified_derivative);
+
+    println!("\n\nLinear simplified derivative function:\n{}", simplified_derivative);
 
 }
 

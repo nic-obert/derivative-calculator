@@ -6,16 +6,17 @@ Project Description
 
 ### Todo
 
+- [ ] eventually, implement simplification of function for specific variables like e, pi, and others  
 - [ ] implement nth roots  
-- [ ] implement function tree simplification  
 - [ ] implement implicit multiplication  
 
 ### In Progress
 
-- [ ] implement derivation of known functions  
 
 ### Done ✓
 
+- [x] implement function tree simplification  
+- [x] implement derivation of known functions  
 - [x] implement linear representation of a function tree  
 - [x] implement derivation  
 - [x] add a readme  
